@@ -1,0 +1,15 @@
+{
+  "id" : "a262e797-8029-4d23-a296-0049f422f6e6",
+  "title" : "Hi",
+  "createdAt" : 1777812363196,
+  "updatedAt" : 1777812444265,
+  "messages" : [ {
+    "role" : "USER",
+    "content" : "Hi",
+    "timestamp" : 1777812384623
+  }, {
+    "role" : "USER",
+    "content" : "Help",
+    "timestamp" : 1777812444265
+  } ]
+}

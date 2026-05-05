@@ -1,21 +1,22 @@
 {% extends "base.html" %}
 
 {% block app_content %}
-    {% for article in articles %}
-        {% include '_article.html' %}
-    {% endfor %}
-    <nav aria-label="...">
-        <ul class="pager">
-            <li class="previous{% if not prev_url %} disabled{% endif %}">
-                <a href="{{ prev_url or '#' }}">
-                    <span aria-hidden="true">&larr;</span> {{ 'Newer posts' }}
-                </a>
-            </li>
-            <li class="next{% if not next_url %} disabled{% endif %}">
-                <a href="{{ next_url or '#' }}">
-                    {{ 'Older posts' }} <span aria-hidden="true">&rarr;</span>
-                </a>
-            </li>
-        </ul>
-    </nav>
+    <h2>News Headlines</h2>
+    {% if articles and articles|length > 0 %}
+    <div id="articles-container">
+      {% for article in articles %}
+        <article style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px;">
+            <h3><a href="{{ article.get('url', '#') }}" target="_blank" rel="noopener">{{ article.get('title', 'No title') }}</a></h3>
+            {% set clean_content = article.get('content')|default('')|replace('\n', ' ')|replace('\r', '') %}
+            <p style="font-size: 0.9em; color: #555;">{{ (clean_content[:200] if clean_content else 'No content available') }}{% if clean_content and clean_content|length > 200 %}...{% endif %}</p>
+            <a href="{{ article.get('url', '#') }}" target="_blank" rel="noopener">Read full article &rarr;</a>
+        </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div id="articles-container" style="padding: 20px; text-align: center; color: #666;">
+        <p><strong>No articles found.</strong></p>
+        <p>This is expected if your NEWSAPI_KEY is invalid or rate-limited. A sample article below demonstrates the UI works correctly.</p>
+    </div>
+    {% endif %}
 {% endblock %}

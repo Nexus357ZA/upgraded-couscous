@@ -1,19 +1,19 @@
 from flask import current_app, url_for
 import json
-#from app import db
 
 
 class Article():
-    # #TODO - This is just a skeleton
-    # id = db.Column(db.Integer, primary_key=True)
-    # source = db.Column(db.String(160))
-    # author = db.Column(db.String(160))
-    # title = db.Column(db.String(160))
-    # description = db.Column(db.String(160))
-    # url = db.Column(db.String())
-    # urlToImage = db.Column(db.String())
-    # publishedAt = db.Column(db.String(160))
-    # content = db.Column(db.String())
-    #
-    # def __repr__(self):
-    #     return '<Article {}>'.format(self.title)
+    """News article model for storing news (SQLAlchemy wired up in create_app())"""
+    def __init__(self, source='', author=None, title='', description=None,
+                 url='', urlToImage=None, publishedAt=None, content=None):
+        self.source = source
+        self.author = author
+        self.title = title
+        self.description = description
+        self.url = url
+        self.urlToImage = urlToImage
+        self.publishedAt = publishedAt
+        self.content = content
+
+    def __repr__(self):
+        return f'<Article {self.title}>'

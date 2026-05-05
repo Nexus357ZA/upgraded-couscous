@@ -1,11 +1,16 @@
-<table class="table table-hover">
-    <tr>
-        <td width="150px">
-            <a href='{{ article["url"] }}'><img src='{{ article["urlToImage"] }}' width="150px"></a>
-        </td>
-        <td>
-            <a href='{{ article["url"] }}'> {{ article["title"] }} </a>
-            {{ article["content"] }}
-        </td>
-    </tr>
-</table>
+<article style="margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px;">
+    {% if article.urlToImage %}
+    <a href="{{ article.url }}" target="_blank" rel="noopener">
+        <img src="{{ article.urlToImage }}" alt="" style="max-width: 200px; height: auto; margin-bottom: 10px;" />
+    </a>
+    {% endif %}
+    <h3><a href="{{ article.url }}" target="_blank" rel="noopener">{{ article.title }}</a></h3>
+    <p style="font-size: 0.9em; color: #555;">
+        {{ article.content[:200] if article.content else 'No content available.' }}{% if article.content and article.content|length > 200 %}...{% endif %}
+    </p>
+    <a href="{{ article.url }}" target="_blank" rel="noopener" style="display: inline-block; margin-top: 10px; color: #0366d6;">Read full article &rarr;</a>
+</article>
+<div style="margin-top: 10px; font-size: 0.8em; color: #999;">
+    <small>Source: {{ article.source.name }}</small><br>
+    <small>{{ article.author or 'Unknown' }} | {{ article.publishedAt[:16] if article.publishedAt else 'No date' }}</small>
+</div>
