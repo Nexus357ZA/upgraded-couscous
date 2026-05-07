@@ -27,7 +27,8 @@
       {% endif %}
       <div class="article-content">
         <h3 class="article-title"><a href="{{ article.get('url', '#') }}">{{ article.get('title', 'No title') }}</a></h3>
-        {% set clean_content = (article.get('content') or article.get('description') or '')|replace('\n', ' ')|replace('\r', '').strip() %}
+        {% set clean_content = article.get('content') or article.get('description', '') %}
+        {% set clean_content = clean_content|replace('\n', ' ')|replace('\r', '').strip() %}
         <p class="article-summary">{{ (clean_content[:250] if clean_content else 'Click to read more.') }}{% if clean_content and clean_content|length > 250 %}...{% endif %}</p>
       </div>
     </a>
