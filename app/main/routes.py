@@ -52,5 +52,15 @@ def index():
         # All failed - return empty list (test article shows UI works)
         articles = []
 
-    return render_template('index.html', title='Home', articles=articles)
+    # Pre-process article content on Python side to avoid Jinja2 filter chain issues with .strip()
+    clean_articles = []
+    for art in articles:
+        raw = art.get('content') or art.get('description', '')
+        if raw:
+            raw_str = str(raw).replace('\n', ' ').replace('\r', '').strip()[:300]
+            if len(str(raw)) > 300:
+                raw_str += '...'
+            # Add clean_content key for template to use
+            art['clean_content'] = raw_str
+    return render_template('index.html', title='Home', articles=clean_articles)
 
