@@ -2,23 +2,87 @@
 
 {% block app_content %}
 <style>
+.category-nav { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb; }
+.category-nav a { padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 500; text-decoration: none; color: #4b5563; background: #f3f4f6; transition: background 0.2s, color 0.2s; }
+.category-nav a:hover { background: #e5e7eb; }
+.category-nav a.active { background: #2563eb; color: #fff; }
+.settings-btn { margin-left: auto; background: none; border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 16px; color: #6b7280; transition: background 0.2s; }
+.settings-btn:hover { background: #f3f4f6; }
+.prefs-panel { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; margin-bottom: 20px; display: none; }
+.prefs-panel.open { display: block; }
+.prefs-panel h3 { margin: 0 0 16px; font-size: 15px; font-weight: 600; color: #1f2937; }
+.prefs-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-start; }
+.prefs-col { flex: 1; min-width: 200px; }
+.prefs-col label { display: block; font-size: 12px; font-weight: 600; color: #6b7280; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.prefs-col select { width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px; background: #fff; }
+.source-list { max-height: 200px; overflow-y: auto; border: 1px solid #d1d5db; border-radius: 8px; background: #fff; padding: 4px 0; }
+.source-item { display: flex; align-items: center; gap: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
+.source-item:hover { background: #f3f4f6; }
+.source-item input[type=checkbox] { accent-color: #2563eb; }
+.prefs-actions { margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end; }
+.prefs-actions button { padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; }
+.btn-save { background: #2563eb; color: #fff; }
+.btn-save:hover { background: #1d4ed8; }
+.btn-cancel { background: #e5e7eb; color: #4b5563; }
+.btn-cancel:hover { background: #d1d5db; }
+.prefs-saved { font-size: 13px; color: #059669; margin-top: 8px; text-align: right; display: none; }
+.prefs-saved.show { display: block; }
 .articles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; padding: 10px 0; }
 @media (max-width: 768px) { .articles-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; } }
 .article-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.2s ease, box-shadow 0.2s ease; text-decoration: none !important; display: block; }
 .article-card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.12); }
-.article-image { width: 100%; height: 160px; object-fit: cover; display: block; background: #f3f4f6; }
 .article-content { padding: 14px; }
-.article-title { margin: 0 0 8px; font-size: 15px; line-height: 1.35; color: #1f2937; }
-.article-title a { text-decoration: none; color: inherit; font-weight: 600; word-break: break-word; }
-.article-title a:hover { color: #2563eb; }
+.article-title { margin: 0 0 8px; font-size: 15px; line-height: 1.35; color: #1f2937; font-weight: 600; word-break: break-word; }
 .article-summary { margin: 0; font-size: 13px; line-height: 1.55; color: #4b5563; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.article-meta { margin-top: 12px; padding-top: 10px; border-top: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #9ca3af; }
-.read-more-btn { background: #2563eb; color: #fff !important; padding: 8px 14px; border-radius: 6px; font-size: 12px; text-decoration: none; font-weight: 500; white-space: nowrap; transition: background 0.2s; }
-.read-more-btn:hover { background: #1d4ed8; }
+.spinner { text-align: center; padding: 24px; color: #9ca3af; display: none; }
+.spinner.active { display: block; }
+.spinner::after { content: 'Loading more stories...'; font-size: 14px; }
+.sentinel { height: 1px; }
 </style>
 
+<nav class="category-nav">
+  {% for cat in categories %}
+  <a href="{{ url_for('main.index', category=cat) }}"{% if cat == current_category %} class="active"{% endif %}>{{ cat|capitalize }}</a>
+  {% endfor %}
+  <button class="settings-btn" id="settings-btn" title="Preferences">&#9881;</button>
+</nav>
+
+<div class="prefs-panel" id="prefs-panel">
+  <h3>Preferences</h3>
+  <div class="prefs-row">
+    <div class="prefs-col">
+      <label for="prefs-language">Language</label>
+      <select id="prefs-language">
+        {% for lang in languages %}
+        <option value="{{ lang.code }}"{% if lang.code == preferences.language %} selected{% endif %}>{{ lang.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="prefs-col">
+      <label>Hide Sources</label>
+      {% if sources %}
+      <div class="source-list" id="source-list">
+        {% for src in sources %}
+        <label class="source-item">
+          <input type="checkbox" value="{{ src.id }}"{% if src.id in (preferences.excluded_sources or []) or src.name in (preferences.excluded_sources or []) %} checked{% endif %}>
+          {{ src.name }}
+        </label>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="font-size:13px;color:#9ca3af;padding:8px 0;">No sources available.</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="prefs-actions">
+    <button class="btn-cancel" id="prefs-cancel">Cancel</button>
+    <button class="btn-save" id="prefs-save">Save &amp; Reload</button>
+  </div>
+  <div class="prefs-saved" id="prefs-saved">Preferences saved.</div>
+</div>
+
 {% if articles and articles|length > 0 %}
-<div class="articles-grid">
+<div class="articles-grid" id="articles-grid" data-total="{{ total }}" data-category="{{ current_category }}">
   {% for article in articles %}
     {% if article is mapping %}
     <a href="{{ article.get('url', '#') }}" target="_blank" rel="noopener" class="article-card">
@@ -26,7 +90,7 @@
         <img src="{{ article.get('urlToImage') or article.get('image') }}" alt="" loading="lazy" style="width:100%;height:160px;object-fit:cover;display:block;">
       {% endif %}
       <div class="article-content">
-        <h3 class="article-title"><a href="{{ article.get('url', '#') }}">{{ article.get('title', 'No title') }}</a></h3>
+        <h3 class="article-title">{{ article.get('title', 'No title') }}</h3>
         {% set summary = article.get('clean_content', '')[:250] %}
         <p class="article-summary">{{ (summary if summary else 'Click to read more.') }}{% if summary and summary|length > 250 %}...{% endif %}</p>
       </div>
@@ -34,10 +98,99 @@
     {% endif %}
   {% endfor %}
 </div>
+<div class="spinner" id="spinner"></div>
+<div class="sentinel" id="sentinel"></div>
 {% else %}
 <div style="padding: 40px; text-align: center; color: #6b7280;">
   <p><strong>No articles found.</strong></p>
   <p>This is expected if your NEWSAPI_KEY is invalid or rate-limited. The UI works correctly.</p>
 </div>
 {% endif %}
+
+<script>
+(function() {
+  var grid = document.getElementById('articles-grid');
+  if (!grid) return;
+
+  // --- infinite scroll ---
+  var sentinel = document.getElementById('sentinel');
+  var spinner = document.getElementById('spinner');
+  var total = parseInt(grid.dataset.total, 10);
+  var category = grid.dataset.category || 'latest';
+  var page = 1;
+
+  function buildCard(article) {
+    return '<a href="' + (article.url || '#') + '" target="_blank" rel="noopener" class="article-card">' +
+      (article.urlToImage || article.image
+        ? '<img src="' + (article.urlToImage || article.image) + '" alt="" loading="lazy" style="width:100%;height:160px;object-fit:cover;display:block;">'
+        : '') +
+      '<div class="article-content">' +
+      '<h3 class="article-title">' + (article.title || 'No title') + '</h3>' +
+      '<p class="article-summary">' + ((article.clean_content || '').slice(0, 250) || 'Click to read more.') + '</p>' +
+      '</div></a>';
+  }
+
+  function loadMore() {
+    spinner.classList.add('active');
+    var nextPage = page + 1;
+    fetch('/api/articles?page=' + nextPage + '&per_page=9&category=' + encodeURIComponent(category))
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        spinner.classList.remove('active');
+        if (!data.articles || data.articles.length === 0) return;
+        page = nextPage;
+        data.articles.forEach(function(article) {
+          grid.insertAdjacentHTML('beforeend', buildCard(article));
+        });
+        if (!data.has_more) observer.disconnect();
+      })
+      .catch(function() { spinner.classList.remove('active'); });
+  }
+
+  var observer = new IntersectionObserver(function(entries) {
+    if (entries[0].isIntersecting) loadMore();
+  }, { rootMargin: '200px' });
+
+  if (grid.children.length < total) observer.observe(sentinel);
+
+  // --- preferences ---
+  var settingsBtn = document.getElementById('settings-btn');
+  var prefsPanel = document.getElementById('prefs-panel');
+  var prefsCancel = document.getElementById('prefs-cancel');
+  var prefsSave = document.getElementById('prefs-save');
+  var prefsSaved = document.getElementById('prefs-saved');
+  var langSelect = document.getElementById('prefs-language');
+  var sourceList = document.getElementById('source-list');
+
+  settingsBtn.addEventListener('click', function() {
+    prefsPanel.classList.toggle('open');
+    prefsSaved.classList.remove('show');
+  });
+
+  prefsCancel.addEventListener('click', function() {
+    prefsPanel.classList.remove('open');
+  });
+
+  prefsSave.addEventListener('click', function() {
+    var excluded = [];
+    if (sourceList) {
+      var checks = sourceList.querySelectorAll('input[type=checkbox]');
+      checks.forEach(function(cb) {
+        if (cb.checked) excluded.push(cb.value);
+      });
+    }
+    fetch('/api/preferences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        language: langSelect.value,
+        excluded_sources: excluded
+      })
+    }).then(function() {
+      prefsSaved.classList.add('show');
+      setTimeout(function() { location.reload(); }, 600);
+    });
+  });
+})();
+</script>
 {% endblock %}

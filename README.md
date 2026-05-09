@@ -1,18 +1,21 @@
 # Upgraded Couscous
 
-A Flask-based news aggregator that fetches top headlines from [NewsAPI](https://newsapi.org/) and displays them in a clean, responsive web interface.
+A Flask-based news aggregator that fetches articles from [NewsAPI](https://newsapi.org/) and displays them in a clean, responsive grid with infinite scrolling.
 
 ## Features
 
-- Fetches real-time news headlines from multiple categories (Technology, Business, General)
-- Multiple fallback sources for reliability
-- Responsive design with Bootstrap 3 styling
-- Debug mode with embedded test articles when API returns empty results
-- Health check endpoint (`/debug-newsapi`) to verify API connectivity
+- **Latest feed** — Broad news feed via `/v2/everything` endpoint
+- **Category browsing** — Technology, Business, General, Health, Science, Entertainment, Sports (via `/v2/top-headlines`)
+- **Infinite scrolling** — Loads 9 articles at a time as you scroll
+- **User preferences** — Persisted as a cookie:
+  - Language selection (9 supported languages)
+  - Hide/show individual news sources
+- **Responsive design** — CSS Grid layout adapts to screen size
+- **Debug endpoint** — `/debug-newsapi` for API troubleshooting
 
 ## Prerequisites
 
-- Python 3.8+
+- Python 3.14+
 - pip or uv (optional, for dependency management)
 
 ## Installation
@@ -65,28 +68,41 @@ uv run run.py
 
 Once running, visit:
 
-- **Main page**: `http://localhost:8080/` - Displays news headlines
-- **Debug endpoint**: `http://localhost:8080/debug-newsapi` - Returns raw API response for troubleshooting
+- **Main page**: `http://localhost:8080/` — Displays news articles in a grid
+- **Category tabs** — Click a category to filter by topic
+- **Preferences** — Click the gear icon to change language or hide sources
+- **Infinite scroll** — Scroll down to load more articles
+- **Debug endpoint**: `http://localhost:8080/debug-newsapi` — Raw API response for troubleshooting
+
+## API Endpoints
+
+- `GET /` or `GET /index?category=latest` — Main page
+- `GET /api/articles?page=1&per_page=9&category=latest` — Paginated JSON for infinite scroll
+- `POST /api/preferences` — Save user preferences (JSON body: `{"language":"en","excluded_sources":[]}`)
+- `GET /debug-newsapi` — Raw NewsAPI response
 
 ## Project Structure
 
 ```
 upgraded-couscous/
 ├── app/
-│   ├── __init__.py          # Flask app factory
-│   ├── errors/               # Error handlers
-│   ├── main/                 # Main routes and NewsAPI client
+│   ├── __init__.py           # Flask app factory
+│   ├── errors/                # Error handlers
+│   ├── main/                  # Main routes and NewsAPI client
 │   │   ├── __init__.py
-│   │   └── routes.py         # Route definitions
-│   └── models.py             # Database models (optional)
-├── app/templates/            # Jinja2 templates
-│   ├── base.html            # Base template with navbar
-│   ├── index.html           # Home page layout
-│   └── _article.html        # Article card component
-├── config.py                 # Configuration classes
-├── run.py                    # Application entry point
-├── requirements.txt          # Python dependencies
-├── .env                      # Environment variables (create manually)
+│   │   └── routes.py          # Route definitions, API, preferences
+│   └── models.py              # Article data model
+├── app/templates/             # Jinja2 templates
+│   ├── base.html              # Base template with navbar
+│   ├── index.html             # Home page layout with infinite scroll
+│   └── errors/
+│       ├── 404.html
+│       └── 500.html
+├── config.py                  # Configuration classes
+├── run.py                     # Application entry point
+├── requirements.txt           # Python dependencies
+├── pyproject.toml             # Project metadata
+├── .env                       # Environment variables (create manually)
 └── README.md
 ```
 
@@ -94,12 +110,13 @@ upgraded-couscous/
 
 ### No articles appear
 
-If you see the sample test article ("TEST: This is a sample article"), your NewsAPI key may be invalid or rate-limited.
+If the page shows "No articles found":
 
 1. Check the server logs for API errors
 2. Visit `/debug-newsapi` to see raw API response
 3. Verify `NEWSAPI_KEY` in `.env` file
 4. Wait for rate limit reset (free tier: 100 requests/day)
+5. Check your preferences — a language with no articles or all sources hidden will show empty results
 
 ### Missing dependencies
 
